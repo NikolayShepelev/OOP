@@ -113,3 +113,107 @@ classDiagram
     Security ..> SecurityValidator : uses
     BriefSecurity ..> SecurityValidator : uses
 ```
+
+## Структура проекта
+```mermaid
+classDiagram
+    class ISecurityRepository {
+        <<interface>>
+        +getById(id: int): Security
+        +get_k_n_short_list(k: int, n: int, sortField: str): List[BriefSecurity]
+        +addSecurity(Security: Security)
+        +replaceSecurity(id: int, newSecurity: Security)
+        +deleteSecurity(id: int)
+        +get_count(): int
+        +sort_by_field(field: str)
+    }
+
+    class AbstractSecurityRepository {
+        <<abstract>>
+        #Securitys: List[Security]
+        #filename: str
+        #serializationStrategy: SerializationStrategy
+        +AbstractSecurityRepository(filename: str, strategy: SerializationStrategy)
+        +readFromFile()
+        +writeToFile()
+        +getById(id: int): Security
+        +get_k_n_short_list(k: int, n: int, sortField: str): List[BriefSecurity]
+        +addSecurity(Security: Security)
+        +replaceSecurity(id: int, newSecurity: Security)
+        +deleteSecurity(id: int)
+        +get_count(): int
+        +sort_by_field(field: str)
+        #generateNewId(): int
+    }
+
+    class SecurityRepository {
+        +SecurityRepository(filename: str, strategy: SerializationStrategy)
+    }
+
+    class SecurityRepositoryAdapter {
+        -fileRepository: AbstractSecurityRepository
+        +SecurityRepositoryAdapter(fileRepository: AbstractSecurityRepository)
+        +getById(id: int): Security
+        +get_k_n_short_list(k: int, n: int, sortField: str): List[BriefSecurity]
+        +addSecurity(Security: Security)
+        +replaceSecurity(id: int, newSecurity: Security)
+        +deleteSecurity(id: int)
+        +get_count(): int
+        +sort_by_field(field: str)
+    }
+
+    class SerializationStrategy {
+        <<interface>>
+        +readFromFile(filename: str): List[Security]
+        +writeToFile(filename: str, Securitys: List[Security])
+    }
+
+    class AbstractSerializationStrategy {
+        <<abstract>>
+        #objectMapper: Any
+        +readFromFile(filename: str): List[Security]
+        +writeToFile(filename: str, Securitys: List[Security])
+        #createObjectMapper()*: Any
+    }
+
+    class JsonSerializationStrategy {
+        #read_data(file): List[dict]
+        #write_data(file, data: List[dict])
+    }
+
+    class YamlSerializationStrategy {
+        #read_data(file): List[dict]
+        #write_data(file, data: List[dict])
+    }
+
+    class Security_rep_DB {
+        -connection: PostgreSQLConnection
+        +Security_rep_DB()
+        +getById(id: int): Security
+        +get_k_n_short_list(k: int, n: int, sortField: str): List[BriefSecurity]
+        +addSecurity(Security: Security)
+        +replaceSecurity(id: int, newSecurity: Security)
+        +deleteSecurity(id: int)
+        +get_count(): int
+        +sort_by_field(field: str)
+    }
+
+    class PostgreSQLConnection {
+        -instance: PostgreSQLConnection
+        -connection: Connection
+        -PostgreSQLConnection()
+        +getInstance(): PostgreSQLConnection
+        +getConnection(): Connection
+        +close()
+    }
+
+    AbstractSecurityRepository <|-- SecurityRepository : extends
+    ISecurityRepository <|.. SecurityRepositoryAdapter : implements
+    SecurityRepositoryAdapter --> AbstractSecurityRepository : uses
+    AbstractSecurityRepository --> SerializationStrategy : uses
+    SerializationStrategy <|.. AbstractSerializationStrategy : implements
+    AbstractSerializationStrategy <|-- JsonSerializationStrategy : extends
+    AbstractSerializationStrategy <|-- YamlSerializationStrategy : extends
+    ISecurityRepository <|.. Security_rep_DB : implements
+    Security_rep_DB --> PostgreSQLConnection : uses
+```
