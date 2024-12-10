@@ -14,20 +14,18 @@ public abstract class AbstractSecurityRepository implements ISecurityRepository 
         this.filename = filename;
         this.serializationStrategy = strategy;
         this.securities = new ArrayList<>();
-        readFromFile();
     }
 
-    public void readFromFile() {
+    protected void readFromFile() {
         this.securities = serializationStrategy.readFromFile(filename);
     }
 
-    public void writeToFile() {
+    protected void writeToFile() {
         serializationStrategy.writeToFile(filename, securities);
     }
 
     @Override
     public Security getById(int id) {
-        readFromFile();
         return securities.stream()
                 .filter(security -> security.getSecurityId() == id)
                 .findFirst()
@@ -36,7 +34,6 @@ public abstract class AbstractSecurityRepository implements ISecurityRepository 
 
     @Override
     public List<BriefSecurity> get_k_n_short_list(int k, int n, String sortField) {
-        readFromFile();
         return securities.stream()
                 .sorted(getComparator(sortField))
                 .skip((long) (k - 1) * n)
@@ -51,7 +48,15 @@ public abstract class AbstractSecurityRepository implements ISecurityRepository 
 
     @Override
     public void addSecurity(Security security) {
-        readFromFile();
+        boolean nameExists = securities.stream()
+                .anyMatch(existingSecurity ->
+                        existingSecurity.getName().equalsIgnoreCase(security.getName()));
+
+        if (nameExists) {
+            throw new DuplicateSecurityNameException(
+                    "Security with name '" + security.getName() + "' already exists");
+        }
+
         int newId = generateNewId();
         Security newSecurity = new Security.Builder()
                 .securityId(newId)
@@ -61,16 +66,23 @@ public abstract class AbstractSecurityRepository implements ISecurityRepository 
                 .expectedReturn(security.getExpectedReturn())
                 .build();
         securities.add(newSecurity);
-        writeToFile();
     }
 
     @Override
     public void replaceSecurity(int id, Security newSecurity) {
-        readFromFile();
+        boolean nameExists = securities.stream()
+                .anyMatch(existingSecurity ->
+                        existingSecurity.getSecurityId() != id &&
+                                existingSecurity.getName().equalsIgnoreCase(newSecurity.getName()));
+
+        if (nameExists) {
+            throw new DuplicateSecurityNameException(
+                    "Security with name '" + newSecurity.getName() + "' already exists");
+        }
+
         for (int i = 0; i < securities.size(); i++) {
             if (securities.get(i).getSecurityId() == id) {
                 securities.set(i, newSecurity);
-                writeToFile();
                 return;
             }
         }
@@ -79,26 +91,20 @@ public abstract class AbstractSecurityRepository implements ISecurityRepository 
 
     @Override
     public void deleteSecurity(int id) {
-        readFromFile();
         boolean removed = securities.removeIf(security -> security.getSecurityId() == id);
-        if (removed) {
-            writeToFile();
-        } else {
+        if (!removed) {
             throw new IllegalArgumentException("Security with id " + id + " not found");
         }
     }
 
     @Override
     public int get_count() {
-        readFromFile();
         return securities.size();
     }
 
     @Override
     public void sort_by_field(String field) {
-        readFromFile();
         securities.sort(getComparator(field));
-        writeToFile();
     }
 
     protected int generateNewId() {
