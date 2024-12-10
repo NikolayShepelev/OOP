@@ -1,5 +1,6 @@
 package org.investment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,11 +17,27 @@ public class Security extends BriefSecurity {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private Security() {
+        super();
+    }
+
+    @JsonCreator
+    public Security(
+            @JsonProperty("securityId") int securityId,
+            @JsonProperty("name") String name,
+            @JsonProperty("type") String type,
+            @JsonProperty("currentPrice") BigDecimal currentPrice,
+            @JsonProperty("expectedReturn") BigDecimal expectedReturn) {
+        super(securityId, name, type, currentPrice);
+        this.expectedReturn = expectedReturn;
+    }
+
     private Security(Builder builder) {
         super(builder.securityId.orElse(0), builder.name, builder.type, builder.currentPrice);
         this.expectedReturn = builder.expectedReturn;
     }
 
+    @JsonProperty("expectedReturn")
     public BigDecimal getExpectedReturn() {
         return expectedReturn;
     }
