@@ -1,10 +1,11 @@
 package org.investment;
 
+import org.investment.util.BaseObservable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostgreSQLRepository implements ISecurityRepository {
+public class PostgreSQLRepository extends BaseObservable implements ISecurityRepository {
     private final PostgreSQLConnection connection;
 
     public PostgreSQLRepository() {
@@ -52,6 +53,7 @@ public class PostgreSQLRepository implements ISecurityRepository {
             stmt.setBigDecimal(3, security.getCurrentPrice());
             stmt.setBigDecimal(4, security.getExpectedReturn());
             stmt.executeUpdate();
+            notifyObservers();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -67,6 +69,7 @@ public class PostgreSQLRepository implements ISecurityRepository {
             stmt.setBigDecimal(4, newSecurity.getExpectedReturn());
             stmt.setInt(5, id);
             stmt.executeUpdate();
+            notifyObservers();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -78,6 +81,7 @@ public class PostgreSQLRepository implements ISecurityRepository {
         try (PreparedStatement stmt = connection.getConnection().prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
+            notifyObservers();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -99,7 +103,7 @@ public class PostgreSQLRepository implements ISecurityRepository {
 
     @Override
     public void sort_by_field(String field) {
-        // Сортировка происходит на уровне SQL запросов
+        notifyObservers();
     }
 
     private Security extractSecurityFromResultSet(ResultSet rs) throws SQLException {

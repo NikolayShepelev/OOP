@@ -1,8 +1,9 @@
 package org.investment;
 
+import org.investment.util.BaseObservable;
 import java.util.List;
 
-public class SecurityRepositoryAdapter implements ISecurityRepository {
+public class SecurityRepositoryAdapter extends BaseObservable implements ISecurityRepository {
     private final AbstractSecurityRepository fileRepository;
 
     public SecurityRepositoryAdapter(AbstractSecurityRepository fileRepository) {
@@ -13,8 +14,7 @@ public class SecurityRepositoryAdapter implements ISecurityRepository {
     @Override
     public Security getById(int id) {
         fileRepository.readFromFile();
-        Security security = fileRepository.getById(id);
-        return security;
+        return fileRepository.getById(id);
     }
 
     @Override
@@ -29,6 +29,7 @@ public class SecurityRepositoryAdapter implements ISecurityRepository {
             fileRepository.readFromFile();
             fileRepository.addSecurity(security);
             fileRepository.writeToFile();
+            notifyObservers();
         } catch (DuplicateSecurityNameException e) {
             throw e;
         }
@@ -40,6 +41,7 @@ public class SecurityRepositoryAdapter implements ISecurityRepository {
             fileRepository.readFromFile();
             fileRepository.replaceSecurity(id, newSecurity);
             fileRepository.writeToFile();
+            notifyObservers();
         } catch (DuplicateSecurityNameException e) {
             throw e;
         }
@@ -50,6 +52,7 @@ public class SecurityRepositoryAdapter implements ISecurityRepository {
         fileRepository.readFromFile();
         fileRepository.deleteSecurity(id);
         fileRepository.writeToFile();
+        notifyObservers();
     }
 
     @Override
@@ -63,5 +66,6 @@ public class SecurityRepositoryAdapter implements ISecurityRepository {
         fileRepository.readFromFile();
         fileRepository.sort_by_field(field);
         fileRepository.writeToFile();
+        notifyObservers();
     }
 }
